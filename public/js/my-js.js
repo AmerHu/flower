@@ -15,3 +15,23 @@ $(".delete").click(function () {
         });
     }
 });
+document.getElementsByTagName("main")[0].style.display = "none";
+window.addEventListener("load", function () {
+    document.getElementsByTagName("main")[0].style.display = "block";
+    document.querySelector('.loader').style.display = "none";
+})
+
+$('document').ready(function () {
+    $("main").hide();
+    $(window).on({
+        load: function () {
+            $('loader').hide();
+            $('main').show();
+        }
+    })
+})
+
+
+// jQuery(window).load(function(){
+//     jQuery(".loader").fadeOut(1800);
+// });

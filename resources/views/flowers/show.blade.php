@@ -26,8 +26,7 @@
                     <div class="carousel-inner" role="listbox">
                         @foreach($flower->images as $image )
                             <div class="item {{ $loop->first ? ' active' : '' }}">
-                                <img src="/img/{{ $image->images }}" style="height: 337px"
-                                     class="img-responsive">
+                                <img src="/img/{{ $image->images }}" class="img-responsive" style="height: 400px">
                             </div>
                         @endforeach
                     </div>

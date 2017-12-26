@@ -5,6 +5,7 @@ namespace App;
 class Flower extends Model
 {
 
+
     public function images()
     {
         return $this->hasMany(Image::class);

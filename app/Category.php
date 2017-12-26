@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class Category extends Model
 {
+    public $table = "categories";
     public function flower()
     {
         $this->hasMany(Flower::class);
@@ -14,6 +15,9 @@ class Category extends Model
     {
         return 'cate';
     }
+    protected $fillable = [
+        'cate',
+    ];
 
 
 }

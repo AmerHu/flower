@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Category;
 use App\Flower;
 use App\Image;
+use App\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use File;
@@ -17,45 +18,30 @@ class CMSController extends Controller
         $this->middleware('auth');
     }
 
-    /**
-     * Display a listing of the resource.
-     *
-     * @return \Illuminate\Http\Response
-     */
     public function index()
     {
-        $flowers = Flower::all();
-        return view('CMS.index', compact('flowers'));
+        $flowers = Flower::orderBy('id')->paginate(2);
+        return view('cms.index', compact('flowers'));
     }
 
-    /**
-     * Show the form for creating a new resource.
-     *
-     * @return \Illuminate\Http\Response
-     */
     public function create()
     {
         $categories = Category::all();
-        return view('CMS.create', compact('categories'));
+        return view('cms.create', compact('categories'));
     }
 
-    /**
-     * Store a newly created resource in storage.
-     *
-     * @param  \Illuminate\Http\Request $request
-     * @return \Illuminate\Http\Response
-     */
     public function store(Request $request)
     {
         $this->validate(
             request(), [
-            'name' => 'required',
-            'type' => 'required',
-            'desc' => 'required',
-            'color' => 'required',
-            'price' => 'required',
-            'cate_id' => 'required',
-            'count' => 'required',
+            'name' => 'required|min:5',
+            'type' => 'required|min:5',
+            'desc' => 'required|min:5',
+            'color' => 'required|min:5',
+            'price' => 'required|numeric',
+            'cate_id' => 'required|numeric',
+            'count' => 'required|numeric',
+            'image' => 'required|mimes:jpeg,bmp,png',
         ]);
 
         Flower::create([
@@ -67,76 +53,78 @@ class CMSController extends Controller
             'cate_id' => request('cate_id'),
             'count' => request('count'),
         ]);
+
+
+        $flower_id = \DB::table('flowers')->max('id');
+
+        if ($request->hasFile('image')) {
+            $file = request()->file('image');
+            $fileName = time() . '.' . $file->getClientOriginalExtension();
+            $file->move(public_path('img'), $fileName);
+        }
+        Image::create([
+            'flower_id' => $flower_id,
+            'images' => $fileName,
+        ]);
+
         return redirect('/cms/admin');
     }
 
-    /**
-     * Display the specified resource.
-     *
-     * @param  int $id
-     * @return \Illuminate\Http\Response
-     */
     public function show($id)
     {
         $flower = Flower::find($id);
-        return view('CMS.show', compact('flower'));
+        return view('cms.show', compact('flower'));
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     *
-     * @param  int $id
-     * @return \Illuminate\Http\Response
-     */
     public function edit($id)
     {
         $flower = Flower::find($id);
-        return view('CMS.edit', compact('flower'));
+        $categories = Category::all();
+        return view('cms.edit', compact('flower', 'categories'));
     }
 
-    /**
-     * Update the specified resource in storage.
-     *
-     * @param  \Illuminate\Http\Request $request
-     * @param  int $id
-     * @return \Illuminate\Http\Response
-     */
     public function update(Request $request, $id)
     {
+
+        $this->validate(
+            request(), [
+            'name' => 'required|min:5',
+            'type' => 'required|min:5',
+            'desc' => 'required|min:5',
+            'color' => 'required|min:5',
+            'price' => 'required|numeric',
+            'cate_id' => 'required|numeric',
+            'count' => 'required|numeric',
+        ]);
+
         Flower::whereId($id)->update([
             'name' => request('name'),
             'type' => request('type'),
             'desc' => request('desc'),
             'color' => request('color'),
-            'cate' => request('cate'),
-            'price' => request('price'),
+            'cate_id' => request('cate_id'),
             'count' => request('count'),
         ]);
 
         return redirect('/cms/admin');
     }
 
-    /**
-     * Remove the specified resource from storage.
-     *
-     * @param  int $id
-     * @return \Illuminate\Http\Response
-     */
     public function destroy($id)
     {
         $results = DB::table('images')
-            ->select(DB::raw('count(images.id) as flower_id'))
             ->where('flower_id', $id)
             ->get();
 
-        if ($results->first()->flower_id > 0) {
-
-            $image = DB::table('images')->where('flower_id', $id)->first()->images;
-            $filename = public_path() . '/img/' . $image;
-            File::delete($filename);
+        if ($results->first()->images !== null) {
+            $images = DB::table('images')->where('flower_id', $id)->pluck('images');
+            foreach ($images as $image) {
+                $filename = public_path() . '/img/' . $image;
+                File::delete($filename);
+            }
+            DB::table('images')->where('flower_id', $id)->delete();
         }
 
-        DB::table('images')->where('flower_id', $id)->delete();
+
         DB::table('flowers')->where('id', $id)->delete();
         return redirect('/cms/admin');
     }
